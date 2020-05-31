@@ -19,9 +19,9 @@ public class Test {
 		}
 		
 		for(int i = 0; i < num; i++) {
-			test.typeString(s);
-			test.keyPress(test.VK_ENTER);
-			test.keyRelease(test.VK_ENTER);
+			io.typeString(s);
+			io.keyPress(io.VK_ENTER);
+			io.keyRelease(io.VK_ENTER);
 		}
 	}
 }
