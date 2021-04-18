@@ -3,6 +3,38 @@
 #include <iostream>
 
 
+// SCREEN metrics
+JNIEXPORT jint JNICALL Java_WindowsIO_getScreenSizeX(JNIEnv*, jobject) {
+    return GetSystemMetrics(SM_CXSCREEN);
+}
+
+JNIEXPORT jint JNICALL Java_WindowsIO_getScreenSizeY(JNIEnv*, jobject) {
+    return GetSystemMetrics(SM_CYSCREEN);
+}
+
+JNIEXPORT jint JNICALL Java_WindowsIO_getVirtualScreenSizeX(JNIEnv*, jobject) {
+    return GetSystemMetrics(SM_CXVIRTUALSCREEN);
+}
+
+JNIEXPORT jint JNICALL Java_WindowsIO_getVirtualScreenSizeY(JNIEnv*, jobject) {
+    return GetSystemMetrics(SM_CYVIRTUALSCREEN);
+}
+
+
+// WINDOW metrics
+JNIEXPORT jobject JNICALL Java_WindowsIO_getForegroundWindowMetrics(JNIEnv* env, jobject) {
+    RECT rect = { NULL };
+    
+    GetWindowRect(GetForegroundWindow(), &rect);
+
+    jclass colorClass = env->FindClass("java/awt/Rectangle");
+    jmethodID constr = env->GetMethodID(colorClass, "<init>", "(IIII)V");
+    jobject ret = env->NewObject(colorClass, constr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+
+    return ret;
+}
+
+
 // KEY press, release
 JNIEXPORT void JNICALL Java_WindowsIO_keyPress(JNIEnv*, jobject, jchar c) {
     INPUT ip;
@@ -97,18 +129,7 @@ JNIEXPORT jint JNICALL Java_WindowsIO_getMouseY(JNIEnv*, jobject) {
 
 
 // MOUSE movement
-JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveRelative(JNIEnv*, jobject, jint x, jint y) {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.mouseData = 0;
-    input.mi.time = 0;
-    input.mi.dx = x;
-    input.mi.dy = y;
-    input.mi.dwFlags = MOUSEEVENTF_MOVE;
-    SendInput(1, &input, sizeof(input));
-}
-
-JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveAbsolute(JNIEnv*, jobject, jint x, jint y) {
+JNIEXPORT void JNICALL Java_WindowsIO_mouseMove(JNIEnv*, jobject, jint x, jint y) {
     INPUT input;
     input.type = INPUT_MOUSE;
     input.mi.mouseData = 0;
@@ -119,7 +140,7 @@ JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveAbsolute(JNIEnv*, jobject, jint x
     SendInput(1, &input, sizeof(input));
 }
 
-JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveAbsoluteVirtual(JNIEnv*, jobject, jint x, jint y) {
+JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveVirtual(JNIEnv*, jobject, jint x, jint y) {
     INPUT input;
     input.type = INPUT_MOUSE;
     input.mi.mouseData = 0;
@@ -127,6 +148,17 @@ JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveAbsoluteVirtual(JNIEnv*, jobject,
     input.mi.dx = x * (0xFFFF / GetSystemMetrics(SM_CXVIRTUALSCREEN));//x being coord in pixels
     input.mi.dy = y * (0xFFFF / GetSystemMetrics(SM_CYVIRTUALSCREEN));//y being coord in pixels
     input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_VIRTUALDESK | MOUSEEVENTF_ABSOLUTE;
+    SendInput(1, &input, sizeof(input));
+}
+
+JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveRelative(JNIEnv*, jobject, jint x, jint y) {
+    INPUT input;
+    input.type = INPUT_MOUSE;
+    input.mi.mouseData = 0;
+    input.mi.time = 0;
+    input.mi.dx = x;
+    input.mi.dy = y;
+    input.mi.dwFlags = MOUSEEVENTF_MOVE;
     SendInput(1, &input, sizeof(input));
 }
 
@@ -141,12 +173,15 @@ JNIEXPORT void JNICALL Java_WindowsIO_mouseScroll(JNIEnv*, jobject, jint ydiff) 
     SendInput(1, &input, sizeof(input));
 }
 
+
+// SCREEN gfx DATA
 JNIEXPORT jobject JNICALL Java_WindowsIO_getPixel(JNIEnv* env, jobject, jint x, jint y) {
     HDC hdc = GetDC(NULL);
     DWORD color = GetPixel(hdc, x, y);
     unsigned int r = GetRValue(color);
     unsigned int g = GetGValue(color);
     unsigned int b = GetBValue(color);
+    ReleaseDC(NULL, hdc);
 
     jclass colorClass = env->FindClass("java/awt/Color");
     jmethodID constr = env->GetMethodID(colorClass, "<init>", "(III)V");
@@ -155,6 +190,58 @@ JNIEXPORT jobject JNICALL Java_WindowsIO_getPixel(JNIEnv* env, jobject, jint x, 
     return ret;
 }
 
+JNIEXPORT jbyteArray JNICALL Java_WindowsIO_getScreenshot(JNIEnv* env, jobject, jint x, jint y, jint width, jint height) {
+    BITMAPINFO MyBMInfo = { 0 };
+    MyBMInfo.bmiHeader.biSize = sizeof(MyBMInfo.bmiHeader);
+    MyBMInfo.bmiHeader.biWidth = width;
+    MyBMInfo.bmiHeader.biHeight = -height;
+    MyBMInfo.bmiHeader.biPlanes = 1;
+    MyBMInfo.bmiHeader.biBitCount = 24;
+    MyBMInfo.bmiHeader.biCompression = BI_RGB;
+    MyBMInfo.bmiHeader.biSizeImage = 0;
+    MyBMInfo.bmiHeader.biXPelsPerMeter = 0;
+    MyBMInfo.bmiHeader.biYPelsPerMeter = 0;
+    MyBMInfo.bmiHeader.biClrUsed = 0;
+    MyBMInfo.bmiHeader.biClrImportant = 0;
+
+    // Create compatible DC, create a compatible bitmap and copy the screen using BitBlt()
+    HDC hdcScreen = GetDC(0);
+    HDC hdcCompatible = CreateCompatibleDC(hdcScreen);
+    HBITMAP hBmp = CreateCompatibleBitmap(hdcScreen, width, height);
+    HGDIOBJ hOldBmp = (HGDIOBJ)SelectObject(hdcCompatible, hBmp);
+
+    BOOL bOK = BitBlt(hdcCompatible, 0, 0, width, height, hdcScreen, 0, 0, SRCCOPY | CAPTUREBLT);
+
+    SelectObject(hdcCompatible, hOldBmp); // always select the previously selected object once done
+    // Get the BITMAPINFO structure from the bitmap
+    GetDIBits(hdcScreen, hBmp, 0, 0, NULL, &MyBMInfo, DIB_RGB_COLORS);
+
+    // create the bitmap buffer
+    char* lpPixels = new char[MyBMInfo.bmiHeader.biSizeImage];
+
+    MyBMInfo.bmiHeader.biCompression = BI_RGB;
+    MyBMInfo.bmiHeader.biBitCount = 24;
+
+    // get the actual bitmap buffer
+    GetDIBits(hdcScreen, hBmp, 0, -MyBMInfo.bmiHeader.biHeight, (LPVOID)lpPixels, &MyBMInfo, DIB_RGB_COLORS);
+
+    //Clean Up
+    ReleaseDC(0, hdcScreen);
+    ReleaseDC(0, hdcCompatible);
+    DeleteDC(hdcCompatible);
+    DeleteDC(hdcScreen);
+    DeleteObject(hBmp);
+    DeleteObject(hOldBmp);
+
+    jbyteArray array = env->NewByteArray(MyBMInfo.bmiHeader.biSizeImage);
+    env->SetByteArrayRegion(array, 0, MyBMInfo.bmiHeader.biSizeImage, (jbyte*)lpPixels);
+
+    delete[] lpPixels;
+    return array;
+}
+
+
+// CLIPBOARD manipulation
 JNIEXPORT jstring JNICALL Java_WindowsIO_getClipboardText(JNIEnv* env, jobject) {
     if (!OpenClipboard(nullptr))
         std::cout << "getClipboardText(): Cannot open clipboard!" << std::endl;
@@ -175,11 +262,6 @@ JNIEXPORT jstring JNICALL Java_WindowsIO_getClipboardText(JNIEnv* env, jobject) 
     return env->NewStringUTF(text.c_str());
 }
 
-/*
- * Class:     WindowsIO
- * Method:    setClipboardText
- * Signature: (Ljava/lang/String;)V
- */
 JNIEXPORT void JNICALL Java_WindowsIO_setClipboardText(JNIEnv* env, jobject, jstring str) {
     const char* output = env->GetStringUTFChars(str, NULL);
     const size_t len = strlen(output) + 1;

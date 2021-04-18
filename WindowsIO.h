@@ -7,6 +7,70 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef WindowsIO_VK_ENTER
+#define WindowsIO_VK_ENTER 13L
+#undef WindowsIO_VK_ALT
+#define WindowsIO_VK_ALT 18L
+#undef WindowsIO_VK_CAPSLOCK
+#define WindowsIO_VK_CAPSLOCK 20L
+#undef WindowsIO_VK_PRINTSCR
+#define WindowsIO_VK_PRINTSCR 44L
+#undef WindowsIO_VK_LSHIFT
+#define WindowsIO_VK_LSHIFT 160L
+#undef WindowsIO_VK_LCTRL
+#define WindowsIO_VK_LCTRL 162L
+#undef WindowsIO_VK_LWIN
+#define WindowsIO_VK_LWIN 91L
+#undef WindowsIO_VK_SLEEP
+#define WindowsIO_VK_SLEEP 95L
+#undef WindowsIO_VK_NUMLOCK
+#define WindowsIO_VK_NUMLOCK 144L
+#undef WindowsIO_VMK_LEFT
+#define WindowsIO_VMK_LEFT 2L
+#undef WindowsIO_VMK_RIGHT
+#define WindowsIO_VMK_RIGHT 8L
+#undef WindowsIO_VMK_MIDDLE
+#define WindowsIO_VMK_MIDDLE 32L
+/*
+ * Class:     WindowsIO
+ * Method:    getScreenSizeX
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_WindowsIO_getScreenSizeX
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     WindowsIO
+ * Method:    getScreenSizeY
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_WindowsIO_getScreenSizeY
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     WindowsIO
+ * Method:    getVirtualScreenSizeX
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_WindowsIO_getVirtualScreenSizeX
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     WindowsIO
+ * Method:    getVirtualScreenSizeY
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_WindowsIO_getVirtualScreenSizeY
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     WindowsIO
+ * Method:    getForegroundWindowMetrics
+ * Signature: ()Ljava/awt/Rectangle;
+ */
+JNIEXPORT jobject JNICALL Java_WindowsIO_getForegroundWindowMetrics
+  (JNIEnv *, jobject);
+
 /*
  * Class:     WindowsIO
  * Method:    keyPress
@@ -81,26 +145,26 @@ JNIEXPORT jint JNICALL Java_WindowsIO_getMouseY
 
 /*
  * Class:     WindowsIO
+ * Method:    mouseMove
+ * Signature: (II)V
+ */
+JNIEXPORT void JNICALL Java_WindowsIO_mouseMove
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     WindowsIO
+ * Method:    mouseMoveVirtual
+ * Signature: (II)V
+ */
+JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveVirtual
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     WindowsIO
  * Method:    mouseMoveRelative
  * Signature: (II)V
  */
 JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveRelative
-  (JNIEnv *, jobject, jint, jint);
-
-/*
- * Class:     WindowsIO
- * Method:    mouseMoveAbsolute
- * Signature: (II)V
- */
-JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveAbsolute
-  (JNIEnv *, jobject, jint, jint);
-
-/*
- * Class:     WindowsIO
- * Method:    mouseMoveAbsoluteVirtual
- * Signature: (II)V
- */
-JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveAbsoluteVirtual
   (JNIEnv *, jobject, jint, jint);
 
 /*
@@ -110,6 +174,14 @@ JNIEXPORT void JNICALL Java_WindowsIO_mouseMoveAbsoluteVirtual
  */
 JNIEXPORT jobject JNICALL Java_WindowsIO_getPixel
   (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     WindowsIO
+ * Method:    getScreenshot
+ * Signature: (IIII)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_WindowsIO_getScreenshot
+  (JNIEnv *, jobject, jint, jint, jint, jint);
 
 /*
  * Class:     WindowsIO
