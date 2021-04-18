@@ -4,10 +4,13 @@ A library that simulates input (keyboard, mouse) made in C++ using Windows.h and
 List of functions in class file (WindowsIO.java).
 
 ## Supports:
+ - getting screen size,
+ - getting foreground window position and size
  - simulating key press,
  - simluating mouse press,
  - simulating mouse movement (relative and absoulte)
  - getting pixel data at coordinates,
+ - getting screenshot of a specified area as byte array
  - getting mouse position
  - getting and seting clipboard text
 
